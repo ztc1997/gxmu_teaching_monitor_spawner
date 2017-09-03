@@ -1,5 +1,4 @@
-import urllib
-from urllib import request, parse
+from urllib import parse
 
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -14,34 +13,36 @@ HTML_ENCODE = 'gbk'
 
 
 # 发出带参数的get请求
-def http_request_get_with_params(url_raw, params):
+def http_request_get_with_params(url_raw, params, opener, addition_headers=None):
     url_params = parse.urlencode(params)
     url = url_raw + '?' + url_params
-    return http_request_get(url)
+    return http_request_get(url, opener, addition_headers)
 
 
 # 根据url发出get请求
-def http_request_get(url, addition_headers=None):
-    req = request.Request(url, headers=HEADERS, method='GET')
-
+def http_request_get(url, opener, addition_headers=None):
+    opener.addheaders = HEADERS.items()
     if addition_headers is not None:
+        opener.addheaders = list(opener.addheaders)
         for k, v in addition_headers.items():
-            req.add_header(k, v)
+            opener.addheaders.append((k, v))
 
-    response = urllib.request.urlopen(req)
+    response = opener.open(url)
+
     resp = response.read()
     return resp
 
 
 # 根据url发出get请求
-def http_request_post(url, params, addition_headers=None):
+def http_request_post(url, params, opener, addition_headers=None):
     data = parse.urlencode(params).encode(HTML_ENCODE)
-    req = request.Request(url, headers=HEADERS, data=data, method='POST')
 
+    opener.addheaders = HEADERS.items()
     if addition_headers is not None:
+        opener.addheaders = list(opener.addheaders)
         for k, v in addition_headers.items():
-            req.add_header(k, v)
+            opener.addheaders.append((k, v))
 
-    response = urllib.request.urlopen(req)
+    response = opener.open(url, data)
     resp = response.read()
     return resp

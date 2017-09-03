@@ -18,19 +18,28 @@ BEAUTIFUL_SOUP_FEATURES = 'html5lib'
 
 URL_BASE = 'http://210.36.49.12/dqzljk/'
 
+http_handler = request.HTTPHandler(debuglevel=0)
+# cookie处理器
+cj = http.cookiejar.LWPCookieJar()
+cookie_support = request.HTTPCookieProcessor(cj)
+my_opener = request.build_opener(cookie_support, http_handler)
+socket.setdefaulttimeout(5)
 
-def login(username, password):
+
+def login(username, password, opener=my_opener):
     # resp = http_request_get('doLogin.do')
     # soup = Soup(resp, BEAUTIFUL_SOUP_FEATURES)
     # print(soup)
     data = {'forward': '${forward?if_exists}', 'loginType': 2, 'uname': username, 'pwd': password, 'Submit': '登录系统'}
-    resp = http_tool.http_request_post(URL_BASE + 'doLogin.do', data)
-    # soup = Soup(resp, BEAUTIFUL_SOUP_FEATURES)
-    # print(soup)
+    resp = http_tool.http_request_post(URL_BASE + 'doLogin.do', data, opener)
+    soup = Soup(resp, BEAUTIFUL_SOUP_FEATURES)
+    if soup.title.string == '操作失败':
+        err = soup.select('td[align="left"]')[1].string
+        raise Exception(err)
 
 
-def obtain_teaching_evaluate_tasks():
-    resp = http_tool.http_request_get(URL_BASE + 'stuMission.do')
+def obtain_teaching_evaluate_tasks(opener=my_opener):
+    resp = http_tool.http_request_get(URL_BASE + 'stuMission.do', opener)
     soup = Soup(resp, BEAUTIFUL_SOUP_FEATURES)
     datatable = soup.select('#datatable')[1].tbody.contents[2::2]
     tasks = []
@@ -43,14 +52,14 @@ def obtain_teaching_evaluate_tasks():
     return tasks
 
 
-def teaching_evaluate(url):
+def teaching_evaluate(url, opener=my_opener):
     url_params = urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)
 
-    resp = http_tool.http_request_get(URL_BASE + url, {'Referer': 'http://210.36.49.12/dqzljk/stuMission.do'})
+    resp = http_tool.http_request_get(URL_BASE + url, opener, {'Referer': 'http://210.36.49.12/dqzljk/stuMission.do'})
     soup = Soup(resp, BEAUTIFUL_SOUP_FEATURES)
     token_str = soup.select('#tokenStr')[0]['value']
 
-    resp = http_tool.http_request_post(URL_BASE + 'getGread.do?', {'contentId': url_params['tcid'][0]},
+    resp = http_tool.http_request_post(URL_BASE + 'getGread.do?', opener, {'contentId': url_params['tcid'][0]},
                                        {'Referer': URL_BASE + url})
     gread = json.loads(resp.decode("utf-8").split('p~p')[4].replace('\'', '\"'))[1:]
 
@@ -66,16 +75,8 @@ def teaching_evaluate(url):
                    'teacherid': url_params['teacherid'][0], 'tname': url_params['tname'][0],
                    'ctid': url_params['contentid'][0],
                    'ctype': 1}
-    resp = http_tool.http_request_post(URL_BASE + 'stuPgAjax.do?', post_params, {'Referer': URL_BASE + url})
+    resp = http_tool.http_request_post(URL_BASE + 'stuPgAjax.do?', post_params, opener, {'Referer': URL_BASE + url})
 
-
-http_handler = request.HTTPHandler(debuglevel=0)
-# cookie处理器
-cj = http.cookiejar.LWPCookieJar()
-cookie_support = request.HTTPCookieProcessor(cj)
-opener = request.build_opener(cookie_support, http_handler)
-request.install_opener(opener)
-socket.setdefaulttimeout(5)
 
 if __name__ == '__main__':
     username = input('输入用户名：')

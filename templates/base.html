@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-cmn-Hans">
+<head>
+    <title>{% block title %}{% endblock %} - Alex Zhang 的工具箱</title>
+    <link href="//cdn.bootcss.com/material-design-icons/3.0.1/iconfont/material-icons.min.css" rel="stylesheet">
+    <link href="//cdn.bootcss.com/materialize/0.99.0/css/materialize.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/site.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="icon" sizes="16x16 32x32" href="/static/favicons/favicon.ico">
+    <!--[if IE]>
+    <link rel="shortcut icon" href="/static/favicons/favicon.ico"><![endif]-->
+    <link rel="apple-touch-icon-precomposed" href="/static/favicons/favicon-152.jpg">
+    <meta name="theme-color" content="#167C80">
+    <meta name="msapplication-TileColor" content="#167C80">
+    <meta name="msapplication-TileImage" content="/static/favicons/favicon-144.jpg">
+</head>
+<body>
+<nav>
+    <div class="nav-wrapper">
+        <a href="#!" class="brand-logo center">{% block brand %}{% endblock %}</a>
+        <ul id="slide-out" class="side-nav fixed">
+            <li>
+                <div class="userView">
+                    <div class="background">
+                        <img height="auto" width="100%" src="/static/iconoclast.jpg">
+                    </div>
+                    <a><img class="logo circle" src="/static/logo.jpg" height=640 width=640></a>
+                    <a><span class="white-text name">Alex Zhang</span></a>
+                </div>
+            </li>
+
+            <li class="no-padding {% if activated_item == 'root' %} active grey {% endif %}">
+                <a href="/"
+                   class="waves-effect waves-teal bold {% if activated_item == 'root' %} darken-2 {% endif %}">首页</a>
+            </li>
+
+            <li class="no-padding {% if activated_item == 'academic' %} active grey {% endif %}">
+                <a href="/academic"
+                   class="waves-effect waves-teal bold {% if activated_item == 'academic' %} darken-2 {% endif %}">教务系统刷评教</a>
+            </li>
+
+            <li class="no-padding {% if activated_item == 'dqzljk' %} active grey {% endif %}">
+                <a href="/dqzljk"
+                   class="waves-effect waves-teal bold {% if activated_item == 'dqzljk' %} darken-2 {% endif %}">教学质量监控系统刷评教</a>
+            </li>
+
+        </ul>
+        <a href="#" data-activates="slide-out" class="button-collapse"><i class="material-icons">menu</i></a>
+    </div>
+</nav>
+<main>
+
+    <div class="container">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                {% block panel %}
+                {% endblock %}
+            </div>
+        </div>
+    </div>
+
+
+</main>
+<footer class="page-footer">
+    <div class="container">
+        <div class="row">
+            <div class="col l12 s12">
+
+                <p class="grey-text text-lighten-4">Alex Zhang 不对使用此工具造成的任何不良后果承担责任，且用且珍惜。
+                </p>
+
+            </div>
+        </div>
+    </div>
+    <div class="footer-copyright">
+        <div class="container">
+            © 2017 Alex Zhang aka ztc1997. Licensed under GPL 3.0.
+            <a class="grey-text text-lighten-4 right" href="https://github.com/ztc1997/gxmu_teaching_monitor_spawner">Source</a>
+        </div>
+    </div>
+</footer>
+<script src="//cdn.bootcss.com/jquery/3.2.1/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/materialize/0.99.0/js/materialize.min.js"></script>
+
+
+<script type="text/javascript">
+    $(".button-collapse").sideNav();
+</script>
+</body>
+</html>

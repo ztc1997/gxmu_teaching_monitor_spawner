@@ -16,28 +16,30 @@ HTML_ENCODE = 'gbk'
 
 BEAUTIFUL_SOUP_FEATURES = 'html5lib'
 
-HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                  'Chrome/55.0.2883.87 Safari/537.36',
-    'contentType': 'utf-8',
-    'Connection': 'keep-alive'
-}
-
 URL_BASE = 'http://210.36.48.230/academic/'
 
+http_handler = request.HTTPHandler(debuglevel=0)
+# cookie处理器
+cj = http.cookiejar.LWPCookieJar()
+cookie_support = request.HTTPCookieProcessor(cj)
+my_opener = request.build_opener(cookie_support, http_handler)
+socket.setdefaulttimeout(5)
 
-def login(username, password):
-    resp = http_tool.http_request_get(URL_BASE + 'index.jsp')
+
+def login(username, password, opener=my_opener):
+    resp = http_tool.http_request_get(URL_BASE + 'index.jsp', opener)
     # soup = Soup(resp, BEAUTIFUL_SOUP_FEATURES)
     # print(soup)
     data = {'j_username': username, 'j_password': password, 'button1': '登 录'}
-    resp = http_tool.http_request_post(URL_BASE + 'j_acegi_security_check', data)
-    # soup = Soup(resp, BEAUTIFUL_SOUP_FEATURES)
-    # print(soup)
+    resp = http_tool.http_request_post(URL_BASE + 'j_acegi_security_check', data, opener)
+    soup = Soup(resp, BEAUTIFUL_SOUP_FEATURES)
+    err = soup.select('#error')
+    if len(err) > 0:
+        raise Exception(err[0].string)
 
 
-def teaching_evaluate_all():
-    resp = http_tool.http_request_get(URL_BASE + 'accessModule.do?moduleId=508&groupId=')
+def teaching_evaluate_all(opener=my_opener):
+    resp = http_tool.http_request_get(URL_BASE + 'accessModule.do?moduleId=508&groupId=', opener)
     soup = Soup(resp, BEAUTIFUL_SOUP_FEATURES)
     infolist = soup.select('.infolist_common')
     # print(infolist)
@@ -49,8 +51,8 @@ def teaching_evaluate_all():
             teaching_evaluate(url)
 
 
-def teaching_evaluate(url):
-    resp = http_tool.http_request_get(URL_BASE + url)
+def teaching_evaluate(url, opener=my_opener):
+    resp = http_tool.http_request_get(URL_BASE + url, opener)
     soup = Soup(resp, BEAUTIFUL_SOUP_FEATURES)
     inputs = soup.find_all(['input', 'textarea'])
     data = {}
@@ -62,16 +64,8 @@ def teaching_evaluate(url):
         elif len(i['value']) == 0 and i['name'].startswith('itemid'):
             i['value'] = '95'
         data[i['name']] = i['value']
-    resp = http_tool.http_request_post(URL_BASE + 'eva/index/putresult.jsdo', data)
+    resp = http_tool.http_request_post(URL_BASE + 'eva/index/putresult.jsdo', data, opener)
 
-
-http_handler = request.HTTPHandler(debuglevel=1)
-# cookie处理器
-cj = http.cookiejar.LWPCookieJar()
-cookie_support = request.HTTPCookieProcessor(cj)
-opener = request.build_opener(cookie_support, http_handler)
-request.install_opener(opener)
-socket.setdefaulttimeout(5)
 
 if __name__ == '__main__':
     username = input('输入用户名：')
