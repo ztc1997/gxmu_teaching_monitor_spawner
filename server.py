@@ -1,17 +1,21 @@
 import binascii
+import http.cookiejar
 import os
-import _thread
-
 import time
+import urllib.request
+
+import eventlet
+from flask import Flask, render_template, make_response
+from flask_socketio import SocketIO, emit
 
 import academic as academic_tool
 import dqzljk as dqzljk_tool
-import http.cookiejar
-import urllib.request
 
-from flask import Flask, render_template, make_response, request, Response
+eventlet.monkey_patch()
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app)
 
 max_age = 24 * 60 * 60
 
@@ -21,41 +25,25 @@ def root():
     return render_template('index.html', activated_item='root')
 
 
-tokens = {}
 academic_users = set()
 
 
 @app.route('/academic', methods=['GET', 'POST'])
 def academic():
-    set_cookie = False
-    token = request.cookies.get('token', None)
-    if token is None or token not in tokens:
-        token = generate_token()
-        set_cookie = True
-    if request.method == 'POST':
-        username = request.form['username']
-        if username in academic_users:
-            return '任务进行中'
-
-        password = request.form['password']
-
-        academic_users.add(username)
-        _thread.start_new_thread(academic_task, (username, password, token))
-
-        resp = Response('提交成功，稍后刷新页面查看结果')
-        if set_cookie:
-            resp.set_cookie('token', token, max_age=max_age)
-            tokens[token] = {}
-        return resp
     resp = make_response(
-        render_template('academic.html', activated_item='academic', state=tokens.get(token, {}).get('academic', None)))
-    if set_cookie:
-        resp.set_cookie('token', token, max_age=max_age)
-        tokens[token] = {}
+        render_template('academic.html', activated_item='academic'))
     return resp
 
 
-def academic_task(username, password, token):
+@socketio.on('spawn', namespace='/academic')
+def academic_task(data):
+    username = data['username']
+    password = data['password']
+    if username in academic_users:
+        emit('update', '任务进行中')
+        emit('complete')
+        return
+    academic_users.add(username)
     http_handler = urllib.request.HTTPHandler(debuglevel=0)
     # cookie处理器
     cj = http.cookiejar.LWPCookieJar()
@@ -63,27 +51,37 @@ def academic_task(username, password, token):
     opener = urllib.request.build_opener(cookie_support, http_handler)
 
     try:
+        emit('update', '正在登录')
         academic_tool.login(username, password, opener=opener)
     except Exception as e:
-        tokens[token]['academic'] = '%s %s 登录失败  %s' % (
-            time.asctime(time.localtime(time.time())), username, e.args)
+        emit('update', '登录失败')
+        emit('complete')
         academic_users.remove(username)
-        log('academic: ' + tokens[token]['academic'])
+        log('academic: ' + '%s %s 登录失败  %s' % (
+            time.asctime(time.localtime(time.time())), username, e.args))
         return
 
     try:
-        tokens[token]['academic'] = '正在评教'
-        academic_tool.teaching_evaluate_all(opener=opener)
+        emit('update', '正在获取任务列表')
+        infolist = academic_tool.teaching_evaluate_list(opener)
+        for info in infolist:
+            status_halt = info.find(class_='statushalt')
+            if status_halt is not None:
+                emit('update', ('正在评教：%s' % info.td.string))
+                url = info.find(text='评估').parent['href'].replace('.', 'eva/index', 1)
+                academic_tool.teaching_evaluate(url, opener)
     except Exception as e:
-        tokens[token]['academic'] = '%s %s 登录成功，但发生其他错误 %s' % (
-            time.asctime(time.localtime(time.time())), username, e.args)
+        emit('update', '登录成功，但发生其他错误')
+        emit('complete')
         academic_users.remove(username)
-        log('academic: ' + tokens[token]['academic'])
+        log('academic: ' + '%s %s 登录成功，但发生其他错误 %s' % (
+            time.asctime(time.localtime(time.time())), username, e.args))
         return
 
-    tokens[token]['academic'] = '%s %s 评教成功' % (time.asctime(time.localtime(time.time())), username)
+    emit('update', '评教成功')
+    emit('complete')
     academic_users.remove(username)
-    log('academic: ' + tokens[token]['academic'])
+    log('academic: ' + '%s %s 评教成功' % (time.asctime(time.localtime(time.time())), username))
 
 
 dqzljk_users = set()
@@ -91,35 +89,20 @@ dqzljk_users = set()
 
 @app.route('/dqzljk', methods=['get', 'post'])
 def dqzljk():
-    set_cookie = False
-    token = request.cookies.get('token', None)
-    if token is None or token not in tokens:
-        token = generate_token()
-        set_cookie = True
-    if request.method == 'POST':
-        username = request.form['username']
-        if username in dqzljk_users:
-            return '任务进行中'
-
-        password = request.form['password']
-
-        dqzljk_users.add(username)
-        _thread.start_new_thread(dqzljk_task, (username, password, token))
-
-        resp = Response('提交成功，稍后刷新页面查看结果')
-        if set_cookie:
-            resp.set_cookie('token', token, max_age=max_age)
-            tokens[token] = {}
-        return resp
     resp = make_response(
-        render_template('dqzljk.html', activated_item='dqzljk', state=tokens.get(token, {}).get('dqzljk', None)))
-    if set_cookie:
-        resp.set_cookie('token', token, max_age=max_age)
-        tokens[token] = {}
+        render_template('dqzljk.html', activated_item='dqzljk'))
     return resp
 
 
-def dqzljk_task(username, password, token):
+@socketio.on('spawn', namespace='/dqzljk')
+def dqzljk_task(data):
+    username = data['username']
+    password = data['password']
+    if username in dqzljk_users:
+        emit('update', '任务进行中')
+        emit('complete')
+        return
+    dqzljk_users.add(username)
     http_handler = urllib.request.HTTPHandler(debuglevel=0)
     # cookie处理器
     cj = http.cookiejar.LWPCookieJar()
@@ -127,30 +110,34 @@ def dqzljk_task(username, password, token):
     opener = urllib.request.build_opener(cookie_support, http_handler)
 
     try:
+        emit('update', '正在登录')
         dqzljk_tool.login(username, password, opener)
     except Exception as e:
-        tokens[token]['dqzljk'] = '%s %s 登录失败  %s' % (
-            time.asctime(time.localtime(time.time())), username, e.args)
+        emit('update', '登录失败')
+        emit('complete')
         dqzljk_users.remove(username)
-        log('dqzljk: ' + tokens[token]['dqzljk'])
+        log('dqzljk: ' + '%s %s 登录失败  %s' % (
+            time.asctime(time.localtime(time.time())), username, e.args))
         return
 
     try:
-        tokens[token]['dqzljk'] = '正在获取任务列表'
+        emit('正在获取任务列表')
         tasks = dqzljk_tool.obtain_teaching_evaluate_tasks(opener)
         for i, task in enumerate(tasks):
-            tokens[token]['dqzljk'] = '正在评教，第 %d 个\t/\t共 %d 个' % (i + 1, len(tasks))
+            emit('正在评教，第 %d 个\t/\t共 %d 个' % (i + 1, len(tasks)))
             dqzljk_tool.teaching_evaluate(task, opener)
     except Exception as e:
-        tokens[token]['dqzljk'] = '%s %s 登录成功，但发生其他错误 %s' % (
-            time.asctime(time.localtime(time.time())), username, e.args)
+        emit('update', '登录成功，但发生其他错误')
+        emit('complete')
         dqzljk_users.remove(username)
-        log('dqzljk: ' + tokens[token]['dqzljk'])
+        log('dqzljk: ' + '%s %s 登录成功，但发生其他错误 %s' % (
+            time.asctime(time.localtime(time.time())), username, e.args))
         return
 
-    tokens[token]['dqzljk'] = '%s %s 评教成功' % (time.asctime(time.localtime(time.time())), username)
+    emit('update', '评教成功')
+    emit('complete')
     dqzljk_users.remove(username)
-    log('dqzljk: ' + tokens[token]['dqzljk'])
+    log('dqzljk: ' + '%s %s 评教成功' % (time.asctime(time.localtime(time.time())), username))
 
 
 def generate_token():
@@ -166,4 +153,4 @@ def log(text):
 
 
 if __name__ == '__main__':
-    app.run()
+    socketio.run(app)

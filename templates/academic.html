@@ -16,19 +16,17 @@
                 <label for="password">密码</label>
             </div>
         </div>
-        <p id="state">{% if state %}{{ state }}{% endif %}</p>
-        <a onclick="submit()" class="waves-effect waves-light btn">刷！</a>
+        <a onclick="spawn()" class="waves-effect waves-light btn">刷！</a>
     </form>
 </div>
 <p>这是针对<a href="http://210.36.48.230/academic/common/security/login.jsp" target="_blank">教务系统</a>的刷评教程序</p>
-<script>
-    function submit() {
-        var form = $('form');
-        $.post('/academic', form.serialize(), function (data) {
-            $('#state').html(data);
-        }).fail(function () {
-            $('#state').html('请求提交失败，请稍后重试。');
-        })
-    }
-</script>
+<div id="modal1" class="modal">
+    <div class="modal-content">
+        <h4>正在处理</h4>
+        <p id="state"></p>
+    </div>
+    <div id="modal1-footer" class="modal-footer">
+        <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat">关闭</a>
+    </div>
+</div>
 {% endblock %}
