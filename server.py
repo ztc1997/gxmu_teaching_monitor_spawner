@@ -65,6 +65,8 @@ def academic_task(data):
             time.asctime(time.localtime(time.time())), username, e.args))
         return
 
+    count = 0
+
     try:
         emit('update', '正在获取任务列表')
         infolist = academic_tool.teaching_evaluate_list(opener)
@@ -74,6 +76,7 @@ def academic_task(data):
                 emit('update', ('正在评教：%s' % info.td.string))
                 url = info.find(text='评估').parent['href'].replace('.', 'eva/index', 1)
                 academic_tool.teaching_evaluate(url, opener)
+                count += 1
     except Exception as e:
         emit('update', '登录成功，但发生其他错误')
         emit('complete')
@@ -82,7 +85,7 @@ def academic_task(data):
             time.asctime(time.localtime(time.time())), username, e.args))
         return
 
-    emit('update', '评教成功')
+    emit('update', '评教完成，共%d个' % count)
     emit('complete')
     academic_users.remove(username)
     log('academic: ' + '%s %s 评教成功' % (time.asctime(time.localtime(time.time())), username))
@@ -131,12 +134,15 @@ def dqzljk_task(data):
             time.asctime(time.localtime(time.time())), username, e.args))
         return
 
+    count = 0
+
     try:
         emit('正在获取任务列表')
         tasks = dqzljk_tool.obtain_teaching_evaluate_tasks(opener)
         for i, task in enumerate(tasks):
             emit('正在评教，第 %d 个\t/\t共 %d 个' % (i + 1, len(tasks)))
             dqzljk_tool.teaching_evaluate(task, opener)
+            count += 1
     except Exception as e:
         emit('update', '登录成功，但发生其他错误')
         emit('complete')
@@ -145,7 +151,7 @@ def dqzljk_task(data):
             time.asctime(time.localtime(time.time())), username, e.args))
         return
 
-    emit('update', '评教成功')
+    emit('update', '评教完成，共%d个' % count)
     emit('complete')
     dqzljk_users.remove(username)
     log('dqzljk: ' + '%s %s 评教成功' % (time.asctime(time.localtime(time.time())), username))
