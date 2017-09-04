@@ -2,6 +2,11 @@ function spawn() {
     var state = $('#state');
     var modal1 = $('#modal1');
     var modal1Footer = $('#modal1-footer');
+    var form = $("form");
+    var username = $('#username');
+    var password = $('#password');
+
+    if (!validate(username) || !validate(password)) return;
 
     state.html('正在发送请求');
     modal1Footer.hide();
@@ -10,7 +15,7 @@ function spawn() {
         dismissible: false
     });
 
-    var formData = $("form").serializeObject();
+    var formData = form.serializeObject();
     var socket = io(window.location.pathname, {reconnection: false});
     socket.on('connect', function () {
         socket.emit('spawn', formData);
@@ -34,4 +39,14 @@ function spawn() {
     socket.on('complete', function () {
         modal1Footer.show();
     });
+}
+
+function validate(obj) {
+    if (obj.val() === '') {
+        obj.removeClass("valid").addClass("invalid");
+        return false;
+    } else {
+        obj.removeClass("invalid").addClass("valid");
+        return true;
+    }
 }

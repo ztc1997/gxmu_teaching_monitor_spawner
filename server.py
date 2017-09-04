@@ -4,14 +4,11 @@ import os
 import time
 import urllib.request
 
-import eventlet
 from flask import Flask, render_template, make_response
 from flask_socketio import SocketIO, emit
 
 import academic as academic_tool
 import dqzljk as dqzljk_tool
-
-eventlet.monkey_patch()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -39,10 +36,17 @@ def academic():
 def academic_task(data):
     username = data['username']
     password = data['password']
+
+    if not username or not password:
+        emit('update', '请填入用户名和密码')
+        emit('complete')
+        return
+
     if username in academic_users:
         emit('update', '任务进行中')
         emit('complete')
         return
+
     academic_users.add(username)
     http_handler = urllib.request.HTTPHandler(debuglevel=0)
     # cookie处理器
@@ -98,11 +102,18 @@ def dqzljk():
 def dqzljk_task(data):
     username = data['username']
     password = data['password']
+
+    if not username or not password:
+        emit('update', '请填入用户名和密码')
+        emit('complete')
+        return
+
     if username in dqzljk_users:
         emit('update', '任务进行中')
         emit('complete')
         return
     dqzljk_users.add(username)
+
     http_handler = urllib.request.HTTPHandler(debuglevel=0)
     # cookie处理器
     cj = http.cookiejar.LWPCookieJar()
