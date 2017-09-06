@@ -1,6 +1,7 @@
 import binascii
 import http.cookiejar
 import os
+import sys
 import time
 import urllib.request
 
@@ -162,7 +163,7 @@ def generate_token():
 
 
 def log(text):
-    output = open('log.txt', 'a', encoding="utf-8")
+    output = open(sys.path[0] + '/log.txt', 'a', encoding="utf-8")
     try:
         output.write(text + '\n')
     finally:

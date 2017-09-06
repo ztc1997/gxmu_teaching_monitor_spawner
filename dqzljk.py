@@ -67,10 +67,10 @@ def teaching_evaluate(url, opener=my_opener):
     standard_id = ''
     for item in gread:
         standard_id += item['id'] + '~'
-        mark_str += '4~'
+        mark_str += '5~'
 
     post_params = {'tokenStr': token_str, 'skid': url_params['skid'][0], 'standardid': standard_id, 'markStr': mark_str,
-                   'comment': '--------请在这里填写您的建议--------', 'totalMark': 80, 'gmodel': 1,
+                   'comment': '--------请在这里填写您的建议--------', 'totalMark': 100, 'gmodel': 1,
                    'courseid': url_params['courseid'][0], 'cname': url_params['cname'][0],
                    'teacherid': url_params['teacherid'][0], 'tname': url_params['tname'][0],
                    'ctid': url_params['contentid'][0],
