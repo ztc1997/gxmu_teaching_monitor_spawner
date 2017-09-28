@@ -1,3 +1,5 @@
+$(".button-collapse").sideNav();
+
 function spawn() {
     var state = $('#state');
     var modal1 = $('#modal1');
