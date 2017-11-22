@@ -59,7 +59,7 @@ def teaching_evaluate(url, opener=my_opener):
     soup = Soup(resp, BEAUTIFUL_SOUP_FEATURES)
     token_str = soup.select('#tokenStr')[0]['value']
 
-    resp = http_tool.http_request_post(URL_BASE + 'getGread.do?', opener, {'contentId': url_params['tcid'][0]},
+    resp = http_tool.http_request_post(URL_BASE + 'getGread.do?', {'contentId': url_params['tcid'][0]}, opener,
                                        {'Referer': URL_BASE + url})
     gread = json.loads(resp.decode("utf-8").split('p~p')[4].replace('\'', '\"'))[1:]
 
