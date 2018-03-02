@@ -1,3 +1,8 @@
+$(function () {
+    $('#modal1').modal();
+    Materialize.updateTextFields();
+});
+
 $(".button-collapse").sideNav();
 
 function spawn() {
