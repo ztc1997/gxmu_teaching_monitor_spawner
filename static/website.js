@@ -5,6 +5,17 @@ $(function () {
 
 $(".button-collapse").sideNav();
 
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/service-worker.js', {scope: '/'})
+            .then(function (registration) {
+            })
+            .catch(function (err) {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+    });
+}
+
 function spawn() {
     var state = $('#state');
     var modal1 = $('#modal1');

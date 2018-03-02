@@ -23,6 +23,11 @@ def root():
     return render_template('index.html', activated_item='root')
 
 
+@app.route('/service-worker.js')
+def service_worker():
+    return app.send_static_file('service-worker.js')
+
+
 academic_users = set()
 
 
